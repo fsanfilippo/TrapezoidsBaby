@@ -30,7 +30,7 @@ public class TrapMapBuilder {
             //Remove ∆0,∆1,...,∆k from T and replace
             //them by the new trapezoids that appear because of the insertion of si.
             trapMap.traps.removeAll(intersecting);
-            
+
         }
 
         return trapMap;
