@@ -17,13 +17,12 @@ public class SearchStructure {
     private Segment b;
     private int trapCount = 0;
 
-    public SearchStructure(Segment l, Segment r, Segment t, Segment b){
+    public SearchStructure(Segment l, Segment r, Segment t, Segment b, Trapezoid trapRoot){
         this.l = l;
         this.r = r;
         this.t = t;
         this.b = b;
 
-        Trapezoid trapRoot = new Trapezoid(b.p, b.q, t, b, trapCount++);
         root = new LeafNode(trapRoot);
     }
 
@@ -43,7 +42,7 @@ public class SearchStructure {
         Trapezoid delta_k = segmentQuery(s, s.q);
 
         while(delta_i != delta_k){
-            //Multiple Neightbors
+            //Multiple Neighbors
             if(delta_i.neighbors.size() > 1 && right_pBelowS(delta_i.rightp, s)){
                 //if rightp p of delta_i is below si, then delta_i+1 is the upper neighbor (position 1 in list)
                 delta_i = delta_i.neighbors.get(1);
@@ -61,11 +60,11 @@ public class SearchStructure {
         if(outSideBoundingBox(q)) return null;
 
         Node cur = root;
-        while(cur.getClass() != LeafNode.class){
-            if(cur.getClass() == YNode.class){
+        while(!(cur instanceof LeafNode)){
+            if(cur instanceof YNode){
                 cur = below((YNode) cur, q) ? cur.rChild : cur.lChild;
             }
-            else if(cur.getClass() == XNode.class){
+            else if(cur instanceof XNode){
                 cur = right((XNode) cur, q) ? cur.rChild : cur.lChild;
             }
         }
@@ -73,17 +72,7 @@ public class SearchStructure {
     }
 
     public Trapezoid segmentQuery(Segment s, Vertex v){
-
-        Node cur = root;
-        while(cur.getClass() != LeafNode.class){
-            if(cur instanceof YNode){
-                cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
-            }
-            else if(cur instanceof XNode){
-                cur =  right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
-            }
-        }
-        return ((LeafNode) cur).trapezoid;
+        return segmentQueryNode(s, v).trapezoid;
     }
 
     private boolean below(YNode node, Query query){
@@ -96,13 +85,13 @@ public class SearchStructure {
     }
 
     private boolean right(XNode node, Query query){
-        return query.x > node.vertex.x;
+        return query.x >= node.vertex.x;
     }
 
     private boolean segmentBelow(YNode node, Segment s, Vertex v){
         Segment n = node.s;
         if(n.p == v){
-            return (n.p.y - n.q.y)/(n.p.x - n.q.x) < (b.p.y - b.q.y)/(b.p.x - b.q.x);
+            return (n.p.y - n.q.y)/(n.p.x - n.q.x) < (s.p.y - s.q.y)/(s.p.x - s.q.x);
         }
         return below(node, new Query(v.x, v.y));
     }
@@ -112,6 +101,43 @@ public class SearchStructure {
         float sy = m * (p.x - s.p.x) + s.p.y;
         return p.y < sy;
     }
+
+    public LeafNode segmentQueryNode(Segment s, Vertex v){
+        Node cur = root;
+        while(!(cur instanceof LeafNode)){
+            if(cur instanceof YNode){
+                cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
+            }
+            else if(cur instanceof XNode){
+                cur = right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+            }
+        }
+        return ((LeafNode) cur);
+    }
+
+    public Node getParentNode(Segment s, Vertex v){
+        Node cur = root;
+        Node last = null;
+        while(!(cur instanceof LeafNode)){
+            if(cur instanceof YNode){
+                last = cur;
+                cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
+            }
+            else if(cur instanceof XNode){
+                last = cur;
+                cur =  right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+            }
+
+        }
+        return last;
+    }
+
+    public void replaceAtRoot(Node n){
+        root = n;
+    }
+
+
+
 
 
 }

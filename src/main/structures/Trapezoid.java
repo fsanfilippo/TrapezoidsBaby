@@ -16,7 +16,7 @@ public class Trapezoid {
     public Face containingFace;
     public List<Trapezoid> neighbors = new ArrayList<>();
 
-    public Trapezoid(Vertex leftp, Vertex rightp, Segment top, Segment bottom, int no){
+    public Trapezoid(Vertex leftp, Vertex rightp, Segment top, Segment bottom, int no) {
         this.leftp = leftp;
         this.rightp = rightp;
         this.top = top;
@@ -24,4 +24,11 @@ public class Trapezoid {
         this.name = "t" + no;
     }
 
+    public Trapezoid(Vertex leftp, Vertex rightp, Segment top, Segment bottom) {
+        this.leftp = leftp;
+        this.rightp = rightp;
+        this.top = top;
+        this.bottom = bottom;
+
+    }
 }

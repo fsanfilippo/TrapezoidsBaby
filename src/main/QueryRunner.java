@@ -5,6 +5,7 @@ import java.util.Scanner;
 import java.io.File;
 
 import main.input.DCELReader;
+import main.input.TrapMapBuilder;
 import main.structures.DCEL.DCEL;
 import main.structures.Segment;
 import java.util.List;
@@ -51,7 +52,7 @@ public class QueryRunner {
                     fileScanner = new Scanner(segmentsFile);
                     DCELReader reader = new DCELReader(fileScanner);
                     DCEL dcel = reader.readDCEL();
-                    dcel.print();
+                    TrapMapBuilder.buildTrapMap(dcel);
                     state = state.QUERYING;
                 }catch(FileNotFoundException e){
                     println("This file doesn't exist!");
