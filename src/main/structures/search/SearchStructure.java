@@ -16,6 +16,7 @@ public class SearchStructure {
     private Segment t;
     private Segment b;
     private int trapCount = 0;
+    private float epsilon = 0.00001f;
 
     public SearchStructure(Segment l, Segment r, Segment t, Segment b, Trapezoid trapRoot){
         this.l = l;
@@ -56,23 +57,23 @@ public class SearchStructure {
 
     }
 
-    public Trapezoid query(Query q){
+    public QueryResponse query(Query q){
         if(outSideBoundingBox(q)) return null;
 
         Node cur = root;
         while(!(cur instanceof LeafNode)){
             if(cur instanceof YNode){
+                if(onSegment((YNode) cur, q))
+                    return new QueryResponse(ResponseType.SEGMENT, ((YNode)cur).s);
                 cur = below((YNode) cur, q) ? cur.rChild : cur.lChild;
             }
             else if(cur instanceof XNode){
-                cur = right((XNode) cur, q) ? cur.rChild : cur.lChild;
+                if(isVertex((XNode) cur, q))
+                    return new QueryResponse(ResponseType.VERTEX,((XNode)cur).vertex);
+                cur = rightOrOn((XNode) cur, q) ? cur.rChild : cur.lChild;
             }
         }
-        return ((LeafNode) cur).trapezoid;
-    }
-
-    public Trapezoid segmentQuery(Segment s, Vertex v){
-        return segmentQueryNode(s, v).trapezoid;
+        return new QueryResponse(ResponseType.TRAPEZOID, ((LeafNode) cur).trapezoid);
     }
 
     private boolean below(YNode node, Query query){
@@ -84,13 +85,30 @@ public class SearchStructure {
         return query.y < ky;
     }
 
-    private boolean right(XNode node, Query query){
+    private boolean rightOrOn(XNode node, Query query){
         return query.x >= node.vertex.x;
+    }
+
+    private boolean isVertex(XNode node, Query query){
+        return (node.vertex.x - query.x < epsilon && node.vertex.y - query.y < epsilon);
+    }
+    private boolean onSegment(YNode node, Query query){
+        Vertex p = node.s.p;
+        Vertex q = node.s.q;
+        float kx = query.x;
+        float m = (p.y - q.y)/(p.x - q.x);
+        float ky = m * (kx - p.x) + p.y;
+        return query.y - ky < epsilon;
+    }
+
+    public Trapezoid segmentQuery(Segment s, Vertex v){
+        return segmentQueryNode(s, v).trapezoid;
     }
 
     private boolean segmentBelow(YNode node, Segment s, Vertex v){
         Segment n = node.s;
         if(n.p == v){
+            //ToDo: Check for vertical lines to avoid div by zero error
             return (n.p.y - n.q.y)/(n.p.x - n.q.x) < (s.p.y - s.q.y)/(s.p.x - s.q.x);
         }
         return below(node, new Query(v.x, v.y));
@@ -109,7 +127,7 @@ public class SearchStructure {
                 cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
             }
             else if(cur instanceof XNode){
-                cur = right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                cur = rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
             }
         }
         return ((LeafNode) cur);
@@ -125,7 +143,7 @@ public class SearchStructure {
             }
             else if(cur instanceof XNode){
                 last = cur;
-                cur =  right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                cur =  rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
             }
 
         }

@@ -52,8 +52,10 @@ public class QueryRunner {
                     fileScanner = new Scanner(segmentsFile);
                     DCELReader reader = new DCELReader(fileScanner);
                     DCEL dcel = reader.readDCEL();
-                    TrapMapBuilder.buildTrapMap(dcel);
-                    state = state.QUERYING;
+                    dcel.print();
+//                    TrapMapBuilder.buildTrapMap(dcel);
+//                    state = state.QUERYING;
+                    return;
                 }catch(FileNotFoundException e){
                     println("This file doesn't exist!");
                 }
