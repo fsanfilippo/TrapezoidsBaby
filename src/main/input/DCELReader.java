@@ -63,7 +63,7 @@ public class DCELReader {
     }
 
     private void readVertex(String line){
-        Scanner lineScanner = new Scanner(nonDigitsToBlanks(line));
+        Scanner lineScanner = new Scanner(InputHelper.nonDigitsToBlanks(line));
         int no = lineScanner.nextInt();
 
         float x = lineScanner.nextFloat();
@@ -94,7 +94,7 @@ public class DCELReader {
 
         String outerComponent = lineScanner.next();
         if(!outerComponent.equals("nil")){
-             componentScanner = new Scanner(nonDigitsToBlanks(outerComponent));
+             componentScanner = new Scanner(InputHelper.nonDigitsToBlanks(outerComponent));
              int e1 = componentScanner.nextInt();
              int e2 = componentScanner.nextInt();
              outerComponents.put(f, e1 + " " + e2);
@@ -102,7 +102,7 @@ public class DCELReader {
 
         String innerComponent = lineScanner.next();
         if(!innerComponent.equals("nil")){
-            componentScanner = new Scanner(nonDigitsToBlanks(innerComponent));
+            componentScanner = new Scanner(InputHelper.nonDigitsToBlanks(innerComponent));
             int e1 = componentScanner.nextInt();
             int e2 = componentScanner.nextInt();
             innerComponents.put(f, e1 + " " + e2);
@@ -113,7 +113,7 @@ public class DCELReader {
     }
 
     private void readHalfEdge(String line){
-        String stripped = nonDigitsToBlanks(line);
+        String stripped = InputHelper.nonDigitsToBlanks(line);
         Scanner lineScanner = new Scanner(stripped);
 
         int e1 = lineScanner.nextInt();
@@ -181,18 +181,6 @@ public class DCELReader {
             h.prev = halfEdgeMap.get(tnp.get(2));
         }
     }
-    private String nonDigitsToBlanks(final CharSequence input){
-        final StringBuilder sb = new StringBuilder( input.length() );
-        for(int i = 0; i < input.length(); i++){
-            final char c = input.charAt(i);
-            if(c > 47 && c < 58){
-                sb.append(c);
-            }
-            else{
-                sb.append(" ");
-            }
-        }
-        return sb.toString();
-    }
+
 
 }

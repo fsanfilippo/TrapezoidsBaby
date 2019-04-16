@@ -29,6 +29,12 @@ public class Trapezoid {
         this.rightp = rightp;
         this.top = top;
         this.bottom = bottom;
-
     }
+
+    public String queryString(){
+        return  top.queryString() + "\n" + bottom.queryString() + "\n" + leftp.queryString() + "\n" + rightp.queryString();
+    }
+
+
+
 }

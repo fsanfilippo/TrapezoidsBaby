@@ -39,8 +39,12 @@ public class Segment {
         return name;
     }
 
-    public void print(){
-        System.out.println("[p: " + p.toString() + " | q: " + q.toString() + "]");
-    }
 
+    public String queryString(){
+
+        if(name.equals("T") || name.equals("B") || name.equals("R") || name.equals("L")){
+            return name;
+        }
+        return "( " + p.queryString() + ", " + q.queryString() + ")";
+    }
 }

@@ -40,7 +40,7 @@ public class TrapMapBuilder {
             trapMap.traps.removeAll(intersecting);
 
             if(intersecting.size() == 1){
-                handldOneInsersectingTrap(trapMap, s, intersecting, ss);
+                handleOneIntersectingTrap(trapMap, s, intersecting, ss);
             }
             else{
                 //ToDo: whip this shit out
@@ -123,10 +123,10 @@ public class TrapMapBuilder {
         return false;
     }
 
-    private static void handldOneInsersectingTrap(TrapezoidMap trapMap, Segment s, List<Trapezoid> intersecting, SearchStructure ss){
+    private static void handleOneIntersectingTrap(TrapezoidMap trapMap, Segment s, List<Trapezoid> intersecting, SearchStructure ss){
         Trapezoid old = intersecting.get(0);
-        Node parentOfReplace = ss.getParentNode(s, s.p);
-        LeafNode toReplace = ss.segmentQueryNode(s, s.p);
+        Node parentOfReplace = ss.getParentNode(s, s.p, true);
+        LeafNode toReplace = ss.segmentQueryNode(s, s.p, true);
         Node subRoot;
 
         if(endPointNotContainedInTrap(old.leftp, s.p)){

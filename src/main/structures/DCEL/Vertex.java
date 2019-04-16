@@ -20,5 +20,15 @@ public class Vertex {
         this.name = name;
     }
 
+    public String queryString(){
+        if(name.getBytes()[0] == 'c'){
+            return name;
+        }
+        return "(" + x + ", " + y + ")";
+    }
+
+
+
+
 
 }

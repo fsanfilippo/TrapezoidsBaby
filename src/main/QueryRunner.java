@@ -5,9 +5,13 @@ import java.util.Scanner;
 import java.io.File;
 
 import main.input.DCELReader;
+import main.input.InputHelper;
 import main.input.TrapMapBuilder;
 import main.structures.DCEL.DCEL;
 import main.structures.Segment;
+import main.structures.TrapezoidMap;
+import main.structures.search.QueryResponse;
+
 import java.util.List;
 
 
@@ -37,6 +41,7 @@ public class QueryRunner {
     private void run(){
         Scanner fileScanner;
         File segmentsFile;
+        TrapezoidMap trapMap = null;
 
         println("Point Location Using Trapezoidal Maps");
         println();
@@ -52,17 +57,25 @@ public class QueryRunner {
                     fileScanner = new Scanner(segmentsFile);
                     DCELReader reader = new DCELReader(fileScanner);
                     DCEL dcel = reader.readDCEL();
-                    dcel.print();
-//                    TrapMapBuilder.buildTrapMap(dcel);
-//                    state = state.QUERYING;
-                    return;
+//                  dcel.print();
+                    trapMap = TrapMapBuilder.buildTrapMap(dcel);
+                    state = state.QUERYING;
                 }catch(FileNotFoundException e){
                     println("This file doesn't exist!");
                 }
-
             }
             while(state == state.QUERYING){
-
+                    Scanner queryScanner = new Scanner(System.in);
+                    print("Query Point: ");
+                    println();
+                    String queryStr = queryScanner.next();
+                    queryStr = InputHelper.nonDigitsToBlanks(queryStr);
+                    Scanner stringScanner = new Scanner(queryStr);
+                    float x = stringScanner.nextFloat();
+                    float y = stringScanner.nextFloat();
+                    Query q = new Query(x, y);
+                    QueryResponse qr = trapMap.query(q);
+                    qr.print();
             }
         }
 

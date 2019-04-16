@@ -1,6 +1,8 @@
 package main.structures;
+import main.Query;
 import main.structures.DCEL.Face;
 import main.structures.DCEL.Vertex;
+import main.structures.search.QueryResponse;
 import main.structures.search.SearchStructure;
 
 import java.util.List;
@@ -16,6 +18,10 @@ public class TrapezoidMap {
         this.D = D;
         traps.add(trapRoot);
         segments.addAll(boundingBox);
+    }
+
+    public QueryResponse query(Query q){
+        return D.query(q);
     }
 
 }

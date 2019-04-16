@@ -36,11 +36,11 @@ public class SearchStructure {
     }
 
     public List<Trapezoid> followSegment(Segment s){
-        Trapezoid delta_i = segmentQuery(s, s.p);
+        Trapezoid delta_i = segmentQuery(s, s.p, true);
         List<Trapezoid> traps = new ArrayList<>();
         traps.add(delta_i);
 
-        Trapezoid delta_k = segmentQuery(s, s.q);
+        Trapezoid delta_k = segmentQuery(s, s.q, false);
 
         while(delta_i != delta_k){
             //Multiple Neighbors
@@ -77,6 +77,12 @@ public class SearchStructure {
     }
 
     private boolean below(YNode node, Query query){
+
+        if(isVertical(node.s.p, node.s.q)){
+            //We know point isn't on line because we onSegment returned false prior
+            if(query.y < node.s.p.y) return true;
+            return false;
+        }
         Vertex p = node.s.p;
         Vertex q = node.s.q;
         float kx = query.x;
@@ -88,11 +94,18 @@ public class SearchStructure {
     private boolean rightOrOn(XNode node, Query query){
         return query.x >= node.vertex.x;
     }
+    private boolean right(XNode node, Query query){
+        return query.x > node.vertex.x;
+    }
 
     private boolean isVertex(XNode node, Query query){
         return (node.vertex.x - query.x < epsilon && node.vertex.y - query.y < epsilon);
     }
     private boolean onSegment(YNode node, Query query){
+
+        if(isVertical(node.s.p, node.s.q))
+            if(query.y < node.s.q.y && query.y > node.s.p.y) return true;
+
         Vertex p = node.s.p;
         Vertex q = node.s.q;
         float kx = query.x;
@@ -101,14 +114,15 @@ public class SearchStructure {
         return query.y - ky < epsilon;
     }
 
-    public Trapezoid segmentQuery(Segment s, Vertex v){
-        return segmentQueryNode(s, v).trapezoid;
+    public Trapezoid segmentQuery(Segment s, Vertex v, boolean p){
+        return segmentQueryNode(s, v, p).trapezoid;
     }
 
     private boolean segmentBelow(YNode node, Segment s, Vertex v){
         Segment n = node.s;
         if(n.p == v){
-            //ToDo: Check for vertical lines to avoid div by zero error
+            if(isVertical(node.s.p, node.s.q)) return true;
+            if(isVertical(s.p, s.q)) return false;
             return (n.p.y - n.q.y)/(n.p.x - n.q.x) < (s.p.y - s.q.y)/(s.p.x - s.q.x);
         }
         return below(node, new Query(v.x, v.y));
@@ -120,20 +134,29 @@ public class SearchStructure {
         return p.y < sy;
     }
 
-    public LeafNode segmentQueryNode(Segment s, Vertex v){
+    public LeafNode segmentQueryNode(Segment s, Vertex v, boolean p){
         Node cur = root;
         while(!(cur instanceof LeafNode)){
             if(cur instanceof YNode){
                 cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
             }
             else if(cur instanceof XNode){
-                cur = rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                //If a q endpoint lies on a vertical extension, we say it lies on the left trapezoid
+                if(p)
+                    cur = rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                else
+                    cur = right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
             }
         }
         return ((LeafNode) cur);
     }
 
-    public Node getParentNode(Segment s, Vertex v){
+    private boolean isVertical(Vertex p, Vertex q){
+        return p.x - q.x < epsilon;
+    }
+
+
+    public Node getParentNode(Segment s, Vertex v, boolean p){
         Node cur = root;
         Node last = null;
         while(!(cur instanceof LeafNode)){
@@ -142,8 +165,15 @@ public class SearchStructure {
                 cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
             }
             else if(cur instanceof XNode){
-                last = cur;
-                cur =  rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                if(p){
+                    last = cur;
+                    cur =  rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                }
+                else{
+                    last = cur;
+                    cur =  right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
+                }
+
             }
 
         }
