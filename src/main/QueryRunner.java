@@ -66,17 +66,23 @@ public class QueryRunner {
                 }
             }
             while(state == state.QUERYING){
-                    Scanner queryScanner = new Scanner(System.in);
                     print("Query Point: ");
+                    Scanner queryScanner = new Scanner(System.in);
+                    String queryStr = queryScanner.nextLine();
                     println();
-                    String queryStr = queryScanner.next();
                     queryStr = InputHelper.nonDigitsToBlanks(queryStr);
                     Scanner stringScanner = new Scanner(queryStr);
                     float x = stringScanner.nextFloat();
                     float y = stringScanner.nextFloat();
                     Query q = new Query(x, y);
                     QueryResponse qr = trapMap.query(q);
-                    qr.print();
+                    if(qr == null){
+                        println("OUTSIDE BOUNDING BOX");
+                    }
+                    else{
+                        qr.print();
+                    }
+
             }
         }
 

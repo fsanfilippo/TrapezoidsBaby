@@ -118,7 +118,7 @@ public class SearchStructure {
         float kx = query.x;
         float m = (p.y - q.y)/(p.x - q.x);
         float ky = m * (kx - p.x) + p.y;
-        return query.y - ky < epsilon;
+        return Math.abs(query.y - ky) < epsilon;
     }
 
     public Trapezoid segmentQuery(Segment s, Vertex v, boolean p){

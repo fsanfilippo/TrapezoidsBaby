@@ -46,8 +46,19 @@ public class TrapMapBuilder {
             } else {
                 handleManyIntersectingTrap(trapMap, s, intersecting, ss);
             }
-
         }
+
+//        for(Trapezoid trap: trapMap.traps){
+//            Segment top = trap.top;
+//            HalfEdge e1 = top.halfEdges[0];
+//            HalfEdge e2 = top.halfEdges[1];
+//            if(e2.origin.x > e2.next.origin.x){
+//                trap.containingFace = e2.incidentFace;
+//            }
+//            else{
+//                trap.containingFace = e1.incidentFace;
+//            }
+//        }
 
         return trapMap;
     }
@@ -358,19 +369,21 @@ public class TrapMapBuilder {
         Trapezoid delta0 = intersecting.get(0);
         Trapezoid deltak = intersecting.get(intersecting.size() - 1);
 
-        // Replace the leftmost node
+        Map<Trapezoid, List<Trapezoid>> newToOld = new HashMap<>();
 
+        // Replace the leftmost node
         LeafNode toReplaceL = ss.segmentQueryNode(s, s.p, true);
         List<Node> parentsOfReplaceL = toReplaceL.parents;
         YNode subRootL;
         Node toAttach;
+        Trapezoid leftMost = null;
         if(s.p == delta0.leftp){
             subRootL = new YNode(s);
             subRootL.parents.addAll(parentsOfReplaceL);
             toAttach = subRootL;
         }
         else{
-            Trapezoid leftMost = new Trapezoid(delta0.leftp, s.p, delta0.top, delta0.bottom);
+            leftMost = new Trapezoid(delta0.leftp, s.p, delta0.top, delta0.bottom);
             trapMap.traps.add(leftMost);
             Node pi = new XNode(s.p);
             pi.parents.addAll(parentsOfReplaceL);
@@ -380,6 +393,7 @@ public class TrapMapBuilder {
             pi.lChild = leftMostLeaf;
 
             subRootL = new YNode(s);
+            pi.rChild = subRootL;
             subRootL.parents.add(pi);
             toAttach = pi;
         }
@@ -390,13 +404,14 @@ public class TrapMapBuilder {
         LeafNode toReplaceR = ss.segmentQueryNode(s, s.q, false);
         List<Node> parentsOfReplaceR = toReplaceR.parents;
         Node subRootR;
+        Trapezoid rightMost = null;
         if(s.q == deltak.rightp){
             subRootR = new YNode(s);
             subRootR.parents.addAll(parentsOfReplaceR);
             toAttach = subRootR;
         }
         else{
-            Trapezoid rightMost = new Trapezoid(s.p, deltak.rightp, deltak.top, deltak.bottom);
+            rightMost = new Trapezoid(s.q, deltak.rightp, deltak.top, deltak.bottom);
             trapMap.traps.add(rightMost);
             Node qi = new XNode(s.q);
             qi.parents.addAll(parentsOfReplaceR);
@@ -406,7 +421,9 @@ public class TrapMapBuilder {
             qi.rChild = rightMostLeaf;
 
             subRootR = new YNode(s);
+            qi.lChild = subRootR;
             subRootR.parents.add(qi);
+
             toAttach = qi;
         }
         replaceNode(parentsOfReplaceR, toReplaceR, toAttach, ss);
@@ -429,6 +446,10 @@ public class TrapMapBuilder {
         List<Trapezoid> replacing = findNewUpperTraps(intersectingIndex, intersecting, s);
         Vertex rightp = replacing.get(replacing.size() - 1).rightp;
         Trapezoid newTrap = new Trapezoid(s.p, rightp, delta0.top, s);
+        List l = new ArrayList<>();
+        l.add(delta0);
+        l.add(replacing.get(replacing.size() - 1));
+        newToOld.put(newTrap, l);
         trapMap.traps.add(newTrap);
         topTraps.add(newTrap);
         LeafNode newLeaf = new LeafNode(newTrap);
@@ -455,6 +476,9 @@ public class TrapMapBuilder {
                 replacing = findNewUpperTraps(intersectingIndex, intersecting, s);
                 rightp = replacing.get(replacing.size() - 1).rightp;
                 newTrap = new Trapezoid(replacing.get(0).leftp, rightp, replacing.get(0).top, s);
+                l.add(replacing.get(0));
+                l.add(replacing.get(replacing.size() - 1));
+                newToOld.put(newTrap, l);
                 trapMap.traps.add(newTrap);
                 topTraps.add(newTrap);
                 newLeaf = new LeafNode(newTrap);
@@ -475,6 +499,12 @@ public class TrapMapBuilder {
         replacing = findNewLowerTraps(intersectingIndex, intersecting, s);
         rightp = replacing.get(replacing.size() - 1).rightp;
         newTrap = new Trapezoid(s.p, rightp, s, delta0.bottom);
+
+        l = new ArrayList<>();
+        l.add(delta0);
+        l.add(replacing.get(replacing.size() - 1));
+        newToOld.put(newTrap, l);
+
         bottomTraps.add(newTrap);
         trapMap.traps.add(newTrap);
         newLeaf = new LeafNode(newTrap);
@@ -500,6 +530,10 @@ public class TrapMapBuilder {
                 replacing = findNewLowerTraps(intersectingIndex, intersecting, s);
                 rightp = replacing.get(replacing.size() - 1).rightp;
                 newTrap = new Trapezoid(replacing.get(0).leftp, rightp,s, replacing.get(0).bottom);
+                l = new ArrayList<>();
+                l.add(replacing.get(0));
+                l.add(replacing.get(replacing.size() - 1));
+                newToOld.put(newTrap, l);
                 trapMap.traps.add(newTrap);
                 bottomTraps.add(newTrap);
                 newLeaf = new LeafNode(newTrap);
@@ -513,6 +547,82 @@ public class TrapMapBuilder {
         subRootR.rChild = newLeaf;
         newLeaf.parents.add(subRootR);
 
+        // Add neighbors
+        if(s.p == delta0.leftp){
+            setLeftNeighbors_spOnVert(topTraps.get(0), bottomTraps.get(0),delta0, s);
+            setNeighborsForOldTraps_spOnVert(topTraps.get(0), bottomTraps.get(0),delta0);
+        }
+        else{
+            leftMost.leftNeighbors.addAll(delta0.leftNeighbors);
+
+            leftMost.rightNeighbors.add(bottomTraps.get(0));
+            leftMost.rightNeighbors.add(topTraps.get(0));
+            topTraps.get(0).leftNeighbors.add(leftMost);
+            bottomTraps.get(0).leftNeighbors.add(leftMost);
+            setNeighborsForOldTraps_spNOTonVert(leftMost, delta0);
+        }
+
+        if(s.q == deltak.rightp){
+            setRightNeighbors_sqOnVert(topTraps.get(topTraps.size() - 1), bottomTraps.get(bottomTraps.size() - 1),deltak, s);
+            setNeighborsForOldTraps_sqOnVert(topTraps.get(topTraps.size() - 1), bottomTraps.get(bottomTraps.size() - 1), deltak);
+        }
+        else{
+            rightMost.rightNeighbors.addAll(deltak.rightNeighbors);
+
+            rightMost.leftNeighbors.add(bottomTraps.get(bottomTraps.size() - 1));
+            rightMost.leftNeighbors.add(topTraps.get(topTraps.size() - 1));
+
+            topTraps.get(topTraps.size() - 1).rightNeighbors.add(rightMost);
+            bottomTraps.get(bottomTraps.size() - 1).rightNeighbors.add(rightMost);
+            setNeighborsForOldTraps_sqNOTonVert(rightMost, deltak);
+        }
+
+        Trapezoid cur;
+        Trapezoid next;
+        // Link the trapezoids together
+        for(int i = 0; i < topTraps.size() - 1; i++){
+            cur = topTraps.get(i);
+            next = topTraps.get(i + 1);
+            List<Trapezoid> oldCur = newToOld.get(cur);
+            if(oldCur.get(1).rightNeighbors.size() == 2){
+                cur.rightNeighbors.add(next);
+                cur.rightNeighbors.add(oldCur.get(1).rightNeighbors.get(1));
+            }else{
+                cur.rightNeighbors.add(next);
+            }
+
+            List<Trapezoid> oldNext = newToOld.get(next);
+            if(oldNext.get(0).leftNeighbors.size() == 2){
+                next.leftNeighbors.add(cur);
+                next.leftNeighbors.add(oldNext.get(0).leftNeighbors.get(1));
+                oldNext.get(0).leftNeighbors.get(0).rightNeighbors.set(0, next);
+            }else{
+                next.leftNeighbors.add(cur);
+            }
+        }
+
+        // Link the trapezoids together
+        for(int i = 0; i < bottomTraps.size() - 1; i++){
+            cur = bottomTraps.get(i);
+            next = bottomTraps.get(i + 1);
+            List<Trapezoid> oldCur = newToOld.get(cur);
+            if(oldCur.get(1).rightNeighbors.size() == 2){
+                cur.rightNeighbors.add(oldCur.get(1).rightNeighbors.get(0));
+                cur.rightNeighbors.add(next);
+            }else{
+                cur.rightNeighbors.add(next);
+            }
+
+            List<Trapezoid> oldNext = newToOld.get(next);
+            if(oldNext.get(0).leftNeighbors.size() == 2){
+                next.leftNeighbors.add(oldNext.get(0).leftNeighbors.get(0));
+                next.leftNeighbors.add(cur);
+                oldNext.get(0).leftNeighbors.get(0).rightNeighbors.set(0, next);
+
+            }else{
+                next.leftNeighbors.add(cur);
+            }
+        }
 
     }
 
@@ -660,7 +770,12 @@ public class TrapMapBuilder {
                         oln.rightNeighbors.set(1, A);
                     }
                 } else {
-                    throw new Error("I thought this was impossible");
+                    if(B.leftNeighbors.get(0) == oln){
+                        oln.rightNeighbors.set(0, B);
+                    }
+                    else{
+                        oln.rightNeighbors.set(0, A);
+                    }
                 }
             } else {
                 Trapezoid olnt = old.leftNeighbors.get(1);

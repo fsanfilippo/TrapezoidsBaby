@@ -26,9 +26,9 @@ public class QueryResponse {
 
     public void print(){
         switch(type){
-            case VERTEX: System.out.println(v.queryString());
-            case SEGMENT: System.out.println(s.queryString());
-            case TRAPEZOID: System.out.println(t.queryString());
+            case VERTEX: System.out.println(v.queryString()); break;
+            case SEGMENT: System.out.println(s.queryString()); break;
+            case TRAPEZOID: System.out.println(t.queryString()); break;
         }
     }
 
