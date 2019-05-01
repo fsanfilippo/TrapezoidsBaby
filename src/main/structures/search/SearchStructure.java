@@ -98,7 +98,7 @@ public class SearchStructure {
     }
 
     private boolean rightOrOn(XNode node, Query query){
-        return query.x >= node.vertex.x;
+        return query.x > node.vertex.x || Math.abs(query.x - node.vertex.x) < epsilon;
     }
     private boolean right(XNode node, Query query){
         return query.x > node.vertex.x;
@@ -125,7 +125,7 @@ public class SearchStructure {
         return segmentQueryNode(s, v, p).trapezoid;
     }
 
-    private boolean segmentBelow(YNode node, Segment s, Vertex v){
+    private boolean segmentBelowP(YNode node, Segment s, Vertex v){
         Segment n = node.s;
         if(n.p == v){
             if(isVertical(node.s.p, node.s.q)) return true;
@@ -134,6 +134,17 @@ public class SearchStructure {
         }
         return below(node, new Query(v.x, v.y));
     }
+
+    private boolean segmentBelowQ(YNode node, Segment s, Vertex v){
+        Segment n = node.s;
+        if(n.q == v){
+            if(isVertical(node.s.p, node.s.q)) return true;
+            if(isVertical(s.p, s.q)) return false;
+            return (s.p.y - s.q.y)/(s.p.x - s.q.x) > (n.p.y - n.q.y)/(n.p.x - n.q.x);
+        }
+        return below(node, new Query(v.x, v.y));
+    }
+
 
     private boolean right_pBelowS(Vertex p, Segment s){
         float m = (s.p.y - s.q.y)/(s.p.x - s.q.x);
@@ -145,7 +156,10 @@ public class SearchStructure {
         Node cur = root;
         while(!(cur instanceof LeafNode)){
             if(cur instanceof YNode){
-                cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
+                if(p)
+                    cur = segmentBelowP((YNode) cur, s, v) ? cur.rChild : cur.lChild;
+                else
+                    cur = segmentBelowQ((YNode) cur, s, v) ? cur.rChild : cur.lChild;
             }
             else if(cur instanceof XNode){
                 //If a q endpoint lies on a vertical extension, we say it lies on the left trapezoid
@@ -162,37 +176,8 @@ public class SearchStructure {
         return Math.abs(p.x - q.x) < epsilon;
     }
 
-
-    public Node getParentNode(Segment s, Vertex v, boolean p){
-        Node cur = root;
-        Node last = null;
-        while(!(cur instanceof LeafNode)){
-            if(cur instanceof YNode){
-                last = cur;
-                cur = segmentBelow((YNode) cur, s, v) ? cur.rChild : cur.lChild;
-            }
-            else if(cur instanceof XNode){
-                if(p){
-                    last = cur;
-                    cur =  rightOrOn(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
-                }
-                else{
-                    last = cur;
-                    cur =  right(((XNode) cur), new Query(v.x, v.y)) ? cur.rChild : cur.lChild;
-                }
-
-            }
-
-        }
-        return last;
-    }
-
     public void replaceAtRoot(Node n){
         root = n;
     }
-
-
-
-
 
 }
