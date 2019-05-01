@@ -370,68 +370,84 @@ public class TrapMapBuilder {
         Node parentOfReplaceL = ss.getParentNode(s, s.p, true);
         LeafNode toReplaceL = ss.segmentQueryNode(s, s.p, true);
         Node subRootL;
+        Node toAttach;
         if(s.p == delta0.leftp){
-
             subRootL = new YNode(s);
             subRootL.parent = parentOfReplaceL;
-
+            toAttach = subRootL;
         }
         else{
             Trapezoid leftMost = new Trapezoid(delta0.leftp, s.p, delta0.top, delta0.bottom);
-            subRootL = new XNode(s.p);
-            subRootL.parent = parentOfReplaceL;
+            Node pi = new XNode(s.p);
+            pi.parent = parentOfReplaceL;
             LeafNode leftMostLeaf = new LeafNode(leftMost);
             leftMost.node = leftMostLeaf;
-            leftMostLeaf.parent = subRootL;
-            subRootL.lChild = leftMostLeaf;
-        }
+            leftMostLeaf.parent = pi;
+            pi.lChild = leftMostLeaf;
 
-        // Attach left most subtree
-        if (parentOfReplaceL == null) {
-            ss.replaceAtRoot(subRootL);
-        } else if (toReplaceL == parentOfReplaceL.lChild) {
-            parentOfReplaceL.lChild = subRootL;
-        } else {
-            parentOfReplaceL.rChild = subRootL;
+            subRootL = new YNode(s);
+            subRootL.parent = pi;
+            toAttach = pi;
         }
+        replaceNode(parentOfReplaceL, toReplaceL, toAttach, ss);
+
 
         // Replace the rightmost node
         Node parentOfReplaceR = ss.getParentNode(s, s.q, false);
         LeafNode toReplaceR = ss.segmentQueryNode(s, s.q, false);
         Node subRootR;
         if(s.q == deltak.rightp){
-
             subRootR = new YNode(s);
             subRootR.parent = parentOfReplaceR;
-
+            toAttach = subRootR;
         }
         else{
             Trapezoid rightMost = new Trapezoid(s.p, deltak.rightp, deltak.top, deltak.bottom);
-            subRootR = new XNode(s.q);
-            subRootR.parent = parentOfReplaceR;
+            Node qi = new XNode(s.q);
+            qi.parent = parentOfReplaceR;
             LeafNode rightMostLeaf = new LeafNode(rightMost);
             rightMost.node = rightMostLeaf;
-            rightMostLeaf.parent = subRootR;
-            subRootR.rChild = rightMostLeaf;
-        }
-        // Attach new rightMost subtree
-        if (parentOfReplaceR == null) {
-            ss.replaceAtRoot(subRootR);
-        } else if (toReplaceR == parentOfReplaceR.lChild) {
-            parentOfReplaceR.lChild = subRootR;
-        } else {
-            parentOfReplaceR.rChild = subRootR;
-        }
+            rightMostLeaf.parent = qi;
+            qi.rChild = rightMostLeaf;
 
+            subRootR = new YNode(s);
+            subRootR.parent = qi;
+            toAttach = qi;
+        }
+        replaceNode(parentOfReplaceR, toReplaceR, toAttach, ss);
+
+
+        // Replace all inbetween nodes with YNodes
+        for(Trapezoid replace: intersecting.subList(1, intersecting.size() - 1)){
+            YNode segmentNode = new YNode(s);
+            Node replacing  = replace.node;
+            Node replacingParent = replacing.parent;
+
+            replaceNode(replacingParent, replacing, segmentNode, ss);
+        }
+        
         // Find all top trapezoids
         List<Trapezoid> replacing = findNewUpperTraps(0, intersecting, s);
         Vertex rightp = replacing.get(replacing.size() - 1).rightp;
         Trapezoid start = new Trapezoid(s.p, rightp, delta0.top, s);
+        LeafNode startLeaf = new LeafNode(start);
+        start.node = startLeaf;
+        subRootL.lChild = startLeaf;
+        startLeaf.parent = subRootL;
+
         for(Trapezoid t: replacing){
             YNode sNode = new YNode(s);
-            Node replacingNode = t.node;
+            Node replacingNodeParent = t.node.parent;
+
 
         }
+        while(replacing.get(replacing.size() - 1 ) != intersecting.get(intersecting.size() - 1 )){
+
+
+        }
+
+
+
 
     }
 
@@ -765,5 +781,16 @@ public class TrapMapBuilder {
         float sy = m * (p.x - s.p.x) + s.p.y;
         return p.y < sy;
     }
+
+    private static void replaceNode(Node parent, Node oldChild, Node newChild, SearchStructure ss){
+        if (parent == null) {
+            ss.replaceAtRoot(newChild);
+        } else if (oldChild == parent.lChild) {
+            parent.lChild = newChild;
+        } else {
+            parent.rChild = newChild;
+        }
+    }
+
 
 }
