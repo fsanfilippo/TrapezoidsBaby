@@ -371,6 +371,7 @@ public class TrapMapBuilder {
         }
         else{
             Trapezoid leftMost = new Trapezoid(delta0.leftp, s.p, delta0.top, delta0.bottom);
+            trapMap.traps.add(leftMost);
             Node pi = new XNode(s.p);
             pi.parents.addAll(parentsOfReplaceL);
             LeafNode leftMostLeaf = new LeafNode(leftMost);
@@ -396,6 +397,7 @@ public class TrapMapBuilder {
         }
         else{
             Trapezoid rightMost = new Trapezoid(s.p, deltak.rightp, deltak.top, deltak.bottom);
+            trapMap.traps.add(rightMost);
             Node qi = new XNode(s.q);
             qi.parents.addAll(parentsOfReplaceR);
             LeafNode rightMostLeaf = new LeafNode(rightMost);
@@ -421,16 +423,19 @@ public class TrapMapBuilder {
         }
 
 
-
+        List<Trapezoid> topTraps = new ArrayList<>();
         // Find all top trapezoids
         int intersectingIndex = 0;
         List<Trapezoid> replacing = findNewUpperTraps(intersectingIndex, intersecting, s);
         Vertex rightp = replacing.get(replacing.size() - 1).rightp;
         Trapezoid newTrap = new Trapezoid(s.p, rightp, delta0.top, s);
+        trapMap.traps.add(newTrap);
+        topTraps.add(newTrap);
         LeafNode newLeaf = new LeafNode(newTrap);
         newTrap.node = newLeaf;
 
         int replaceIndex = 0;
+        intersectingIndex++;
 
         boolean firstLoop = true;
         while(replacing.get(replaceIndex) != intersecting.get(intersecting.size() - 1)){
@@ -450,6 +455,8 @@ public class TrapMapBuilder {
                 replacing = findNewUpperTraps(intersectingIndex, intersecting, s);
                 rightp = replacing.get(replacing.size() - 1).rightp;
                 newTrap = new Trapezoid(replacing.get(0).leftp, rightp, replacing.get(0).top, s);
+                trapMap.traps.add(newTrap);
+                topTraps.add(newTrap);
                 newLeaf = new LeafNode(newTrap);
                 newTrap.node = newLeaf;
                 replaceIndex = 0;
@@ -462,17 +469,19 @@ public class TrapMapBuilder {
         newLeaf.parents.add(subRootR);
 
 
-
+        List<Trapezoid> bottomTraps = new ArrayList<>();
         // Find all bottom trapezoids
         intersectingIndex = 0;
-        replacing = findNewUpperTraps(intersectingIndex, intersecting, s);
+        replacing = findNewLowerTraps(intersectingIndex, intersecting, s);
         rightp = replacing.get(replacing.size() - 1).rightp;
         newTrap = new Trapezoid(s.p, rightp, s, delta0.bottom);
+        bottomTraps.add(newTrap);
+        trapMap.traps.add(newTrap);
         newLeaf = new LeafNode(newTrap);
         newTrap.node = newLeaf;
 
         replaceIndex = 0;
-
+        intersectingIndex++;
         firstLoop = true;
         while(replacing.get(replaceIndex) != intersecting.get(intersecting.size() - 1)){
             Trapezoid t = null;
@@ -491,6 +500,8 @@ public class TrapMapBuilder {
                 replacing = findNewLowerTraps(intersectingIndex, intersecting, s);
                 rightp = replacing.get(replacing.size() - 1).rightp;
                 newTrap = new Trapezoid(replacing.get(0).leftp, rightp,s, replacing.get(0).bottom);
+                trapMap.traps.add(newTrap);
+                bottomTraps.add(newTrap);
                 newLeaf = new LeafNode(newTrap);
                 newTrap.node = newLeaf;
                 replaceIndex = 0;
