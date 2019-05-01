@@ -2,6 +2,7 @@ package main.structures;
 
 import main.structures.DCEL.Face;
 import main.structures.DCEL.Vertex;
+import main.structures.search.LeafNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ public class Trapezoid {
     public Face containingFace;
     public List<Trapezoid> leftNeighbors = new ArrayList<>();
     public List<Trapezoid> rightNeighbors = new ArrayList<>();
+    public LeafNode node;
 
     public Trapezoid(Vertex leftp, Vertex rightp, Segment top, Segment bottom, int no) {
         this.leftp = leftp;

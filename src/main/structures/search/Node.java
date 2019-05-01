@@ -4,4 +4,5 @@ public abstract class Node {
 
     public Node lChild;
     public Node rChild;
+    public Node parent;
 }

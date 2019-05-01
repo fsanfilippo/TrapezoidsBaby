@@ -164,9 +164,15 @@ public class TrapMapBuilder {
                 trapMap.traps.add(A);
                 trapMap.traps.add(B);
 
+                //Add new nodes to the search structure
                 subRoot = new YNode(s);
+                subRoot.parent = parentOfReplace;
                 subRoot.lChild = new LeafNode(A);
+                A.node = (LeafNode) subRoot.lChild;
+                subRoot.lChild.parent = subRoot;
                 subRoot.rChild = new LeafNode(B);
+                B.node = (LeafNode) subRoot.rChild;
+                subRoot.rChild.parent = subRoot;
 
             } else {
                 // Left endpoint of s lies is already in T but not right endpoint
@@ -207,12 +213,24 @@ public class TrapMapBuilder {
                 trapMap.traps.add(B);
                 trapMap.traps.add(C);
 
+                // Add new nodes to the search structure
                 subRoot = new XNode(s.q);
+                subRoot.parent = parentOfReplace;
                 subRoot.rChild = new LeafNode(C);
+                C.node = (LeafNode) subRoot.rChild;
+                subRoot.rChild.parent = subRoot;
+
                 Node si = new YNode(s);
                 si.lChild = new LeafNode(A);
+                si.lChild.parent = si;
+                A.node = (LeafNode) si.lChild;
+
                 si.rChild = new LeafNode(B);
+                B.node = (LeafNode) si.rChild;
+                si.rChild.parent = si;
+
                 subRoot.lChild = si;
+                si.parent = subRoot;
 
             }
         } else {
@@ -257,11 +275,22 @@ public class TrapMapBuilder {
                 trapMap.traps.add(C);
 
                 subRoot = new XNode(s.p);
+                subRoot.parent = parentOfReplace;
                 subRoot.lChild = new LeafNode(C);
+                C.node = (LeafNode) subRoot.lChild;
+                subRoot.lChild.parent = subRoot;
+
                 Node si = new YNode(s);
                 si.lChild = new LeafNode(A);
+                A.node = (LeafNode) si.lChild;
+                si.lChild.parent = si;
+
                 si.rChild = new LeafNode(B);
+                B.node = (LeafNode) si.rChild;
+                si.rChild.parent = si;
+
                 subRoot.rChild = si;
+                si.parent = subRoot;
             } else {
                 // s is completely contained in the trapezoid
                 // Therefore create four new trapezoids
@@ -298,15 +327,28 @@ public class TrapMapBuilder {
 
                 Node si = new YNode(s);
                 si.lChild = new LeafNode(B);
+                B.node = (LeafNode) si.lChild;
+                si.lChild.parent = si;
+
                 si.rChild = new LeafNode(C);
+                C.node = (LeafNode) si.rChild;
+                si.rChild.parent = si;
 
                 Node qi = new XNode(s.q);
                 qi.rChild = new LeafNode(D);
+                D.node = (LeafNode) qi.rChild;
+                qi.rChild.parent = qi;
                 qi.lChild = si;
+                si.parent = qi;
 
                 subRoot = new XNode(s.p);
+                subRoot.parent = parentOfReplace;
+
                 subRoot.lChild = new LeafNode(A);
+                A.node = (LeafNode) subRoot.lChild;
+                subRoot.lChild.parent = subRoot;
                 subRoot.rChild = qi;
+                qi.parent = subRoot;
             }
         }
 
@@ -319,6 +361,80 @@ public class TrapMapBuilder {
             parentOfReplace.rChild = subRoot;
         }
     }
+
+    private static void handleManyIntersectingTrap(TrapezoidMap trapMap, Segment s, List<Trapezoid> intersecting, SearchStructure ss) {
+        Trapezoid delta0 = intersecting.get(0);
+        Trapezoid deltak = intersecting.get(intersecting.size() - 1);
+
+        // Replace the leftmost node
+        Node parentOfReplaceL = ss.getParentNode(s, s.p, true);
+        LeafNode toReplaceL = ss.segmentQueryNode(s, s.p, true);
+        Node subRootL;
+        if(s.p == delta0.leftp){
+
+            subRootL = new YNode(s);
+            subRootL.parent = parentOfReplaceL;
+
+        }
+        else{
+            Trapezoid leftMost = new Trapezoid(delta0.leftp, s.p, delta0.top, delta0.bottom);
+            subRootL = new XNode(s.p);
+            subRootL.parent = parentOfReplaceL;
+            LeafNode leftMostLeaf = new LeafNode(leftMost);
+            leftMost.node = leftMostLeaf;
+            leftMostLeaf.parent = subRootL;
+            subRootL.lChild = leftMostLeaf;
+        }
+
+        // Attach left most subtree
+        if (parentOfReplaceL == null) {
+            ss.replaceAtRoot(subRootL);
+        } else if (toReplaceL == parentOfReplaceL.lChild) {
+            parentOfReplaceL.lChild = subRootL;
+        } else {
+            parentOfReplaceL.rChild = subRootL;
+        }
+
+        // Replace the rightmost node
+        Node parentOfReplaceR = ss.getParentNode(s, s.q, false);
+        LeafNode toReplaceR = ss.segmentQueryNode(s, s.q, false);
+        Node subRootR;
+        if(s.q == deltak.rightp){
+
+            subRootR = new YNode(s);
+            subRootR.parent = parentOfReplaceR;
+
+        }
+        else{
+            Trapezoid rightMost = new Trapezoid(s.p, deltak.rightp, deltak.top, deltak.bottom);
+            subRootR = new XNode(s.q);
+            subRootR.parent = parentOfReplaceR;
+            LeafNode rightMostLeaf = new LeafNode(rightMost);
+            rightMost.node = rightMostLeaf;
+            rightMostLeaf.parent = subRootR;
+            subRootR.rChild = rightMostLeaf;
+        }
+        // Attach new rightMost subtree
+        if (parentOfReplaceR == null) {
+            ss.replaceAtRoot(subRootR);
+        } else if (toReplaceR == parentOfReplaceR.lChild) {
+            parentOfReplaceR.lChild = subRootR;
+        } else {
+            parentOfReplaceR.rChild = subRootR;
+        }
+
+        // Find all top trapezoids
+        List<Trapezoid> replacing = findNewUpperTraps(0, intersecting, s);
+        Vertex rightp = replacing.get(replacing.size() - 1).rightp;
+        Trapezoid start = new Trapezoid(s.p, rightp, delta0.top, s);
+        for(Trapezoid t: replacing){
+            YNode sNode = new YNode(s);
+            Node replacingNode = t.node;
+
+        }
+
+    }
+
 
     private static Vertex[] setLeftRightp(Vertex old, Vertex sEndpoint) {
         Vertex A;
@@ -611,4 +727,43 @@ public class TrapMapBuilder {
         }
 
     }
+
+    public static List<Trapezoid> findNewUpperTraps(int startIndex, List<Trapezoid> intersecting, Segment s){
+        List<Trapezoid> ret = new ArrayList<>();
+        Trapezoid start = intersecting.get(startIndex);
+        ret.add(start);
+
+        // traverse till we find a right p that is above s
+        Vertex rightp = start.rightp;
+        int i = startIndex;
+        while(right_pBelowS(rightp, s) || rightp != s.q){
+            Trapezoid next = intersecting.get(++i);
+            ret.add(next);
+            rightp = next.rightp;
+        }
+        return ret;
+    }
+
+    public static List<Trapezoid> findNewLowerTraps(int startIndex, List<Trapezoid> intersecting, Segment s){
+        List<Trapezoid> ret = new ArrayList<>();
+        Trapezoid start = intersecting.get(startIndex);
+        ret.add(start);
+
+        // traverse till we find a right p that is above s
+        Vertex rightp = start.rightp;
+        int i = startIndex;
+        while(!right_pBelowS(rightp, s) || rightp != s.q){
+            Trapezoid next = intersecting.get(++i);
+            ret.add(next);
+            rightp = next.rightp;
+        }
+        return ret;
+    }
+
+    private static boolean right_pBelowS(Vertex p, Segment s){
+        float m = (s.p.y - s.q.y)/(s.p.x - s.q.x);
+        float sy = m * (p.x - s.p.x) + s.p.y;
+        return p.y < sy;
+    }
+
 }

@@ -105,7 +105,7 @@ public class SearchStructure {
     }
 
     private boolean isVertex(Vertex v, Query query){
-        return (v.x - query.x < epsilon && v.y - query.y < epsilon);
+        return (Math.abs(v.x - query.x) < epsilon && Math.abs(v.y - query.y) < epsilon);
     }
 
     private boolean onSegment(YNode node, Query query){
@@ -130,7 +130,7 @@ public class SearchStructure {
         if(n.p == v){
             if(isVertical(node.s.p, node.s.q)) return true;
             if(isVertical(s.p, s.q)) return false;
-            return (n.p.y - n.q.y)/(n.p.x - n.q.x) < (s.p.y - s.q.y)/(s.p.x - s.q.x);
+            return (s.p.y - s.q.y)/(s.p.x - s.q.x) < (n.p.y - n.q.y)/(n.p.x - n.q.x);
         }
         return below(node, new Query(v.x, v.y));
     }
@@ -159,7 +159,7 @@ public class SearchStructure {
     }
 
     private boolean isVertical(Vertex p, Vertex q){
-        return p.x - q.x < epsilon;
+        return Math.abs(p.x - q.x) < epsilon;
     }
 
 
