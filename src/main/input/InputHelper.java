@@ -6,7 +6,7 @@ public class InputHelper {
         final StringBuilder sb = new StringBuilder( input.length() );
         for(int i = 0; i < input.length(); i++){
             final char c = input.charAt(i);
-            if(c > 47 && c < 58){
+            if(c > 47 && c < 58 || c == '.'){
                 sb.append(c);
             }
             else{

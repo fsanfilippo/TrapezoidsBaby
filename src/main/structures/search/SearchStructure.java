@@ -35,6 +35,7 @@ public class SearchStructure {
         return false;
     }
 
+    //Get the list of trapezoids intersected by a segment
     public List<Trapezoid> followSegment(Segment s){
         Trapezoid delta_i = segmentQuery(s, s.p, true);
         List<Trapezoid> traps = new ArrayList<>();
@@ -44,12 +45,12 @@ public class SearchStructure {
 
         while(delta_i != delta_k){
             //Multiple Neighbors
-            if(delta_i.neighbors.size() > 1 && right_pBelowS(delta_i.rightp, s)){
+            if(delta_i.rightNeighbors.size() > 1 && right_pBelowS(delta_i.rightp, s)){
                 //if rightp p of delta_i is below si, then delta_i+1 is the upper neighbor (position 1 in list)
-                delta_i = delta_i.neighbors.get(1);
+                delta_i = delta_i.rightNeighbors.get(1);
             }
             else{
-                delta_i = delta_i.neighbors.get(0);
+                delta_i = delta_i.rightNeighbors.get(0);
             }
             traps.add(delta_i);
         }
@@ -63,12 +64,17 @@ public class SearchStructure {
         Node cur = root;
         while(!(cur instanceof LeafNode)){
             if(cur instanceof YNode){
-                if(onSegment((YNode) cur, q))
+                YNode yCur = (YNode) cur;
+                if(isVertex(yCur.s.p, q))
+                    return new QueryResponse(ResponseType.VERTEX,yCur.s.p);
+                if(isVertex(yCur.s.q, q))
+                    return new QueryResponse(ResponseType.VERTEX,yCur.s.q);
+                if(onSegment(yCur, q))
                     return new QueryResponse(ResponseType.SEGMENT, ((YNode)cur).s);
                 cur = below((YNode) cur, q) ? cur.rChild : cur.lChild;
             }
             else if(cur instanceof XNode){
-                if(isVertex((XNode) cur, q))
+                if(isVertex(((XNode) cur).vertex, q))
                     return new QueryResponse(ResponseType.VERTEX,((XNode)cur).vertex);
                 cur = rightOrOn((XNode) cur, q) ? cur.rChild : cur.lChild;
             }
@@ -98,9 +104,10 @@ public class SearchStructure {
         return query.x > node.vertex.x;
     }
 
-    private boolean isVertex(XNode node, Query query){
-        return (node.vertex.x - query.x < epsilon && node.vertex.y - query.y < epsilon);
+    private boolean isVertex(Vertex v, Query query){
+        return (v.x - query.x < epsilon && v.y - query.y < epsilon);
     }
+
     private boolean onSegment(YNode node, Query query){
 
         if(isVertical(node.s.p, node.s.q))

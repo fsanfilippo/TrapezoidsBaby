@@ -52,7 +52,8 @@ public class QueryRunner {
                 print("Name of input DCEL file: ");
 
                 try{
-                    segmentsFile = new File(input.next());
+//                    segmentsFile = new File(input.next());
+                    segmentsFile = new File("dcel.txt");
                     println();
                     fileScanner = new Scanner(segmentsFile);
                     DCELReader reader = new DCELReader(fileScanner);

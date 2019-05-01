@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 public class TrapMapBuilder {
+
+    private static float epsilon = 0.0001f;
+
     public static TrapezoidMap buildTrapMap(DCEL dcel){
         List<Segment> segments = getSegments(dcel.halfEdges);
         Face unbounded = getUnboundedFace(dcel.faces);
@@ -33,7 +36,6 @@ public class TrapMapBuilder {
             //Find the set ∆0,∆1,...,∆k of trapezoids in T properly intersected
             //by si.
             List<Trapezoid> intersecting = ss.followSegment(s);
-            intersecting.size();
 
             //Remove ∆0,∆1,...,∆k from T and replace
             //them by the new trapezoids that appear because of the insertion of si.
@@ -43,7 +45,7 @@ public class TrapMapBuilder {
                 handleOneIntersectingTrap(trapMap, s, intersecting, ss);
             }
             else{
-                //ToDo: whip this shit out
+                //TODO: Implement this
             }
 
         }
@@ -73,10 +75,10 @@ public class TrapMapBuilder {
 
         //The four vertices of R, starting at the upper left corner,
         // are named counterclockwise as c1, c2, c3, and c4.
-        Vertex tl = new Vertex(top + 1, left - 1, "c1");
-        Vertex bl = new Vertex(bottom - 1, left - 1, "c2");
-        Vertex br = new Vertex( bottom - 1, right + 1, "c3");
-        Vertex tr = new Vertex(top + 1, right + 1, "c4");
+        Vertex tl = new Vertex(left - 1.0f, top + 1.0f, "c1");
+        Vertex bl = new Vertex(left - 1.0f, bottom - 1.0f, "c2");
+        Vertex br = new Vertex( right + 1.0f, bottom - 1.0f, "c3");
+        Vertex tr = new Vertex(right + 1.0f, top + 1.0f, "c4");
 
         //The left, right, top, and bottom sides of the bounding box R for
         // all the segments are named L, R, T, and B, respectively.
@@ -105,6 +107,8 @@ public class TrapMapBuilder {
                 accountedFor.add(h);
                 accountedFor.add(h.twin);
                 segments.add(s);
+                h.segment = s;
+                h.twin.segment = s;
             }
         }
         return segments;
@@ -119,7 +123,7 @@ public class TrapMapBuilder {
 
     private static boolean endPointNotContainedInTrap(Vertex trapVertex, Vertex segEndPoint){
         if(trapVertex == segEndPoint) return true;
-        if(trapVertex.x == segEndPoint.x) return true;
+        if(Math.abs(trapVertex.x - segEndPoint.x) < epsilon) return true;
         return false;
     }
 
@@ -147,6 +151,11 @@ public class TrapMapBuilder {
                 A = new Trapezoid(leftp_A, rightp_A, old.top, s);
                 B = new Trapezoid(leftp_B, rightp_B, s, old.bottom);
 
+                // Set left neighbors
+                setLeftNeighbors_spOnVert(A, B, old, s);
+                // Set right neighbors
+                setRightNeighbors_sqOnVert(A, B, old, s);
+
                 trapMap.traps.add(A);
                 trapMap.traps.add(B);
 
@@ -173,6 +182,16 @@ public class TrapMapBuilder {
                 A = new Trapezoid(leftp_A, rightp_A, old.top, s);
                 B = new Trapezoid(leftp_B, rightp_B, s, old.bottom);
                 C = new Trapezoid(leftp_C, rightp_C, old.top, old.bottom);
+
+                // Add left neighbors
+                setLeftNeighbors_spOnVert(A, B, old, s);
+                C.leftNeighbors.add(B);
+                C.leftNeighbors.add(A);
+
+                // Add right neighbors
+                A.rightNeighbors.add(C);
+                B.rightNeighbors.add(C);
+                C.rightNeighbors.addAll(old.rightNeighbors);
 
                 trapMap.traps.add(A);
                 trapMap.traps.add(B);
@@ -208,6 +227,14 @@ public class TrapMapBuilder {
                 B = new Trapezoid(leftp_B, rightp_B, s, old.bottom);
                 C = new Trapezoid(leftp_C, rightp_C, old.top, old.bottom);
 
+                // Add left neighbors
+                C.leftNeighbors.addAll(old.leftNeighbors);
+                A.leftNeighbors.add(C);
+                B.leftNeighbors.add(C);
+
+                // Add right neighbors
+                setRightNeighbors_sqOnVert(A, C, old, s);
+
                 trapMap.traps.add(A);
                 trapMap.traps.add(B);
                 trapMap.traps.add(C);
@@ -232,6 +259,20 @@ public class TrapMapBuilder {
                 trapMap.traps.add(B);
                 trapMap.traps.add(C);
                 trapMap.traps.add(D);
+
+                // Add left neighbors
+                A.leftNeighbors.addAll(old.leftNeighbors);
+                B.leftNeighbors.add(A);
+                C.leftNeighbors.add(A);
+                D.leftNeighbors.add(C);
+                D.leftNeighbors.add(B);
+
+                // Add right neighbors
+                A.rightNeighbors.add(C);
+                A.rightNeighbors.add(B);
+                B.rightNeighbors.add(D);
+                B.rightNeighbors.add(D);
+                D.rightNeighbors.addAll(old.rightNeighbors);
 
                 Node si = new YNode(s);
                 si.lChild = new LeafNode(B);
@@ -276,5 +317,119 @@ public class TrapMapBuilder {
         Vertex AB[] = {A, B};
         return AB;
     }
+
+    private static boolean incident(Vertex v, Segment s){
+        HalfEdge start = v.incidentEdge;
+        HalfEdge next = start;
+        do{
+            next = next.next;
+            if(next.segment == s){
+                return true;
+            }
+        }while(start != next);
+        return false;
+    }
+
+    private static void setLeftNeighbors_spOnVert(Trapezoid A, Trapezoid B, Trapezoid old, Segment s){
+        if(old.leftp == s.p){
+            if(old.leftNeighbors.size() == 1){
+                Trapezoid oln = old.leftNeighbors.get(0);
+                if(!incident(s.p, old.top)){
+                    A.leftNeighbors.add(oln);
+                }
+                if(!incident(s.p, old.bottom)){
+                    B.leftNeighbors.add(oln);
+                }
+            }
+            else if(old.leftNeighbors.size() == 2){
+                Trapezoid olnb = old.leftNeighbors.get(0);
+                Trapezoid olnt = old.leftNeighbors.get(1);
+                A.leftNeighbors.add(olnt);
+                B.leftNeighbors.add(olnb);
+            }
+        }
+        else if(old.leftp.y > s.p.y){
+            if(old.leftNeighbors.size() == 1){
+                Trapezoid oln = old.leftNeighbors.get(0);
+                A.leftNeighbors.add(oln);
+                B.leftNeighbors.add(oln);
+            }
+            else if(old.leftNeighbors.size() == 2){
+                Trapezoid olnb = old.leftNeighbors.get(0);
+                Trapezoid olnt = old.leftNeighbors.get(1);
+
+                A.leftNeighbors.add(olnb);
+                A.leftNeighbors.add(olnt);
+                B.leftNeighbors.add(olnb);
+            }
+        }
+        else{
+            if(old.leftNeighbors.size() == 1){
+                Trapezoid oln = old.leftNeighbors.get(0);
+                A.leftNeighbors.add(oln);
+                B.leftNeighbors.add(oln);
+            }
+            else if(old.leftNeighbors.size() == 2){
+                Trapezoid olnb = old.leftNeighbors.get(0);
+                Trapezoid olnt = old.leftNeighbors.get(1);
+
+               A.leftNeighbors.add(olnt);
+               B.leftNeighbors.add(olnb);
+               B.leftNeighbors.add(olnt);
+            }
+        }
+    }
+
+    private static void setRightNeighbors_sqOnVert(Trapezoid A, Trapezoid B, Trapezoid old, Segment s){
+        if(old.rightp == s.q){
+            if(old.rightNeighbors.size() == 1){
+                Trapezoid orn = old.rightNeighbors.get(0);
+                if(!incident(s.q, old.top)){
+                    A.rightNeighbors.add(orn);
+                }
+                if(!incident(s.p, old.bottom)){
+                    B.rightNeighbors.add(orn);
+                }
+            }
+            else if(old.rightNeighbors.size() == 2){
+                Trapezoid olnb = old.rightNeighbors.get(0);
+                Trapezoid olnt = old.rightNeighbors.get(1);
+                A.rightNeighbors.add(olnt);
+                B.rightNeighbors.add(olnb);
+            }
+            else if(old.rightp.y > s.q.y){
+                if(old.rightNeighbors.size() == 1){
+                    Trapezoid orn = old.rightNeighbors.get(0);
+                    A.rightNeighbors.add(orn);
+                    B.rightNeighbors.add(orn);
+                }
+                else if(old.rightNeighbors.size() == 2){
+                    Trapezoid ornb = old.rightNeighbors.get(0);
+                    Trapezoid ornt = old.rightNeighbors.get(1);
+
+                    A.rightNeighbors.add(ornb);
+                    A.rightNeighbors.add(ornt);
+                    B.rightNeighbors.add(ornb);
+                }
+            }
+            else{
+                if(old.rightNeighbors.size() == 1){
+                    Trapezoid orn = old.rightNeighbors.get(0);
+                    A.rightNeighbors.add(orn);
+                    B.rightNeighbors.add(orn);
+                }
+                else if(old.rightNeighbors.size() == 2){
+                    Trapezoid ornb = old.rightNeighbors.get(0);
+                    Trapezoid ornt = old.rightNeighbors.get(1);
+
+                    A.rightNeighbors.add(ornt);
+                    B.rightNeighbors.add(ornb);
+                    B.rightNeighbors.add(ornt);
+                }
+            }
+        }
+        
+    }
+
 
 }

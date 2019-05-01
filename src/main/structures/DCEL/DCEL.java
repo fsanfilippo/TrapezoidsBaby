@@ -23,8 +23,8 @@ public class DCEL {
         System.out.println("~~~~ FACES ~~~~");
         for(Face f: faces){
             String outer = f.outerComponent != null ? f.outerComponent.name : "null";
-            String inner = f.innerComponent != null ? f.innerComponent.name : "null";
-            System.out.println(f.name + " " + outer + " " + inner);
+            //String inner = f.innerComponent != null ? f.innerComponent.name : "null";
+            System.out.println(f.name + " " + outer + " ");
         }
 
         System.out.println("~~~~ HALF-EDGES ~~~~");

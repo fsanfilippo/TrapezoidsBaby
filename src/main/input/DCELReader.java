@@ -16,7 +16,7 @@ public class DCELReader {
     private Scanner fileScanner;
     private Map<Vertex, String> incidentHalfEdge = new HashMap<>();
     private Map<Face, String> outerComponents = new HashMap<>();
-    private Map<Face, String> innerComponents = new HashMap<>();
+    private Map<Face, List<String>> innerComponents = new HashMap<>();
     private Map<HalfEdge, List<String>> twinNextPrev = new HashMap<>();
 
     private Map<String, HalfEdge> halfEdgeMap = new HashMap<>();
@@ -103,9 +103,14 @@ public class DCELReader {
         String innerComponent = lineScanner.next();
         if(!innerComponent.equals("nil")){
             componentScanner = new Scanner(InputHelper.nonDigitsToBlanks(innerComponent));
-            int e1 = componentScanner.nextInt();
-            int e2 = componentScanner.nextInt();
-            innerComponents.put(f, e1 + " " + e2);
+            List<String> inner = new ArrayList<>();
+            while(componentScanner.hasNext()){
+                int e1 = componentScanner.nextInt();
+                int e2 = componentScanner.nextInt();
+                inner.add(e1 + " " + e2);
+            }
+            innerComponents.put(f, inner);
+
         }
 
         faceMap.put(faceNo, f);
@@ -161,11 +166,15 @@ public class DCELReader {
 
     private void linkFaces(){
         for(Face f: faces){
-            String inner = innerComponents.get(f);
+            List<String> inner = innerComponents.get(f);
             String outer = outerComponents.get(f);
 
             if(inner != null){
-                f.innerComponent = halfEdgeMap.get(inner);
+                List<HalfEdge> innerHE = new ArrayList<>();
+                for(String s: inner){
+                    innerHE.add(halfEdgeMap.get(s));
+                }
+                f.innerComponent = innerHE;
             }
             if(outer != null){
                 f.outerComponent = halfEdgeMap.get(outer);
